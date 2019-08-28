@@ -1,229 +1,311 @@
 <!DOCTYPE HTML>
 <!--
-	Massively by HTML5 UP
+	Stellar by HTML5 UP
 	html5up.net | @ajlkn
 	Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
 -->
 <html>
-	<head>
-		<title>Massively by HTML5 UP</title>
-		<meta charset="utf-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
-		<link rel="stylesheet" href="assets/css/main.css" />
-		<noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>
-	</head>
-	<body class="is-preload">
 
-		<!-- Wrapper -->
-			<div id="wrapper" class="fade-in">
+<head>
+	<title>TexPdf: Automatically Profession PDF Publish Pipeline</title>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+	<link rel="stylesheet" href="assets/css/main.css" />
+	<noscript>
+		<link rel="stylesheet" href="assets/css/noscript.css" />
+	</noscript>
+	<style type="text/css">
+		#the-canvas {
+			border: 1px solid black;
+		}
+	</style>
+	<script src="//mozilla.github.io/pdf.js/build/pdf.js"></script>
+	<script type="text/javascript">
+		window.onload = function () {
+			// If absolute URL from the remote server is provided, configure the CORS
+			// header on that server.
+			var url = '/pdf/publish/professional_pdf_latest.pdf';
 
-				<!-- Intro -->
-					<div id="intro">
-						<h1>This is<br />
-						Massively</h1>
-						<p>A free, fully responsive HTML5 + CSS3 site template designed by <a href="https://twitter.com/ajlkn">@ajlkn</a> for <a href="https://html5up.net">HTML5 UP</a><br />
-						and released for free under the <a href="https://html5up.net/license">Creative Commons license</a>.</p>
-						<ul class="actions">
-							<li><a href="#header" class="button icon solo fa-arrow-down scrolly">Continue</a></li>
-						</ul>
+			// Loaded via <script> tag, create shortcut to access PDF.js exports.
+			var pdfjsLib = window['pdfjs-dist/build/pdf'];
+
+			// The workerSrc property shall be specified.
+			pdfjsLib.GlobalWorkerOptions.workerSrc = '//mozilla.github.io/pdf.js/build/pdf.worker.js';
+
+			var pdfDoc = null,
+				pageNum = 1,
+				pageRendering = false,
+				pageNumPending = null,
+				scale = 2.5,
+				canvas = document.getElementById('the-canvas'),
+				ctx = canvas.getContext('2d');
+
+			/**
+			 * Get page info from document, resize canvas accordingly, and render page.
+			 * @param num Page number.
+			 */
+			function renderPage(num) {
+				pageRendering = true;
+				// Using promise to fetch the page
+				pdfDoc.getPage(num).then(function (page) {
+					var viewport = page.getViewport(scale);
+					// var viewport = page.getViewport(canvas.width / page.getViewport(1.0).width);
+					canvas.height = viewport.height;
+					canvas.width = viewport.width;
+
+					// Render PDF page into canvas context
+					var renderContext = {
+						canvasContext: ctx,
+						viewport: viewport
+					};
+					var renderTask = page.render(renderContext);
+
+					// Wait for rendering to finish
+					renderTask.promise.then(function () {
+						pageRendering = false;
+						if (pageNumPending !== null) {
+							// New page rendering is pending
+							renderPage(pageNumPending);
+							pageNumPending = null;
+						}
+					});
+				});
+
+				// Update page counters
+				document.getElementById('page_num').textContent = num;
+				document.getElementById('page_num_bot').textContent = num;
+			}
+
+			/**
+			 * If another page rendering in progress, waits until the rendering is
+			 * finised. Otherwise, executes rendering immediately.
+			 */
+			function queueRenderPage(num) {
+				if (pageRendering) {
+					pageNumPending = num;
+				} else {
+					renderPage(num);
+				}
+			}
+
+			/**
+			 * Displays previous page.
+			 */
+			function onPrevPage() {
+				if (pageNum <= 1) {
+					return;
+				}
+				pageNum--;
+				queueRenderPage(pageNum);
+			}
+			document.getElementById('prev').addEventListener('click', onPrevPage);
+			document.getElementById('prev_bot').addEventListener('click', onPrevPage);
+			/**
+			 * Displays next page.
+			 */
+			function onNextPage() {
+				if (pageNum >= pdfDoc.numPages) {
+					return;
+				}
+				pageNum++;
+				queueRenderPage(pageNum);
+			}
+			document.getElementById('next').addEventListener('click', onNextPage);
+			document.getElementById('next_bot').addEventListener('click', onNextPage);
+			/**
+			 * Asynchronously downloads PDF.
+			 */
+			pdfjsLib.getDocument(url).then(function (pdfDoc_) {
+				pdfDoc = pdfDoc_;
+				document.getElementById('page_count').textContent = pdfDoc.numPages;
+				document.getElementById('page_count_bot').textContent = pdfDoc.numPages;
+				// Initial/first page rendering
+				renderPage(pageNum);
+			});
+		}
+	</script>
+</head>
+
+<body class="is-preload">
+
+	<!-- Wrapper -->
+	<div id="wrapper">
+
+		<!-- Header -->
+		<header id="header" class="alt">
+			<span class="logo">
+				<!-- see this ref to hide image by svg  
+					https://www.tutorialspoint.com/How-can-I-display-an-image-inside-SVG-circle-in-HTML5-->
+				<svg width="200" height="200">
+					<defs>
+						<clipPath id="myCircle">
+							<circle cx="100" cy="100" r="100" fill="#FFFFFF" />
+						</clipPath>
+					</defs>
+					<image width="200" height="200" xlink:href="images/avatar-seal.jpg" clip-path="url(#myCircle)" />
+				</svg>
+				<!-- <img src="images/avatar-seal.jpg" alt="" /> -->
+			</span>
+			<h1>Tex PDF Pipeline</h1>
+		</header>
+
+		<!-- Nav -->
+		<nav id="nav">
+			<ul>
+				<li>
+					<a href="#cta">Demo</a>
+				</li>
+			</ul>
+		</nav>
+
+		<!-- Main -->
+		<div id="main">
+
+			<!-- Get Started -->
+			<section id="cta" class="main special">
+				<header class="major">
+					<h2>Professional PDF</h2>
+					<p>Edit with
+						<a href="https://v2.overleaf.com/?r=24287d0d&rm=d&rs=b">
+							<b>Overleaf</b>
+						</a> &nbsp; &nbsp; Build by
+						<a href="https://github.com/koppor/docker-texlive">
+							<b>TexLive</b>
+						</a>,
+						</br>
+						Release and deploy by
+						<b>CircleCi</b> and
+						<b>GitHub</b> automatically.
+						<br> Display by
+						<b>PDF.js</b>
+					</p>
+				</header>
+				<footer class="major">
+					<ul class="actions special">
+						<li>
+							<a href="pdf" class="button primary icon fa-file-pdf-o">Separate PDF Viewer</a>
+						</li>
+						<li>
+							<a href="https://github.com/xmeng1/texpdf/raw/master/pdf/publish/professional_pdf_latest.pdf" class="button primary icon fa-download">Download</a>
+						</li>
+						<li>
+							<a href="https://github.com/xmeng1/tex-pdf-pipeline" class="button primary icon fa-external-link" target="_blank">Source</a>
+						</li>
+					</ul>
+				</footer>
+
+				<div style="margin-bottom: 20px">
+						<button id="prev" style="float: left;" class="button primary small">Previous</button>
+	
+						&nbsp; &nbsp;
+						<span>Page:
+							<span id="page_num"></span> /
+							<span id="page_count"></span>
+						</span>
+						<button id="next" style="float: right;" class="button primary small">Next</button>
 					</div>
+				<canvas id="the-canvas" style="width: 100%"></canvas>
+				<div style="margin-top: 20px">
+					<button id="prev_bot" style="float: left;" class="button primary small">Previous</button>
 
-				<!-- Header -->
-					<header id="header">
-						<a href="index.html" class="logo">Massively</a>
-					</header>
+					&nbsp; &nbsp;
+					<span>Page:
+						<span id="page_num_bot"></span> /
+						<span id="page_count_bot"></span>
+					</span>
+					<button id="next_bot" style="float: right;" class="button primary small">Next</button>
+				</div>
+				<script>
+					// tell the embed parent frame the height of the content
+					if (window.parent && window.parent.parent) {
+						window.parent.parent.postMessage(["resultsFrame", {
+							height: document.body.getBoundingClientRect().height,
+							slug: "wagvs9Lf"
+						}], "*")
+					}
+				</script>
 
-				<!-- Nav -->
-					<nav id="nav">
-						<ul class="links">
-							<li class="active"><a href="index.html">This is Massively</a></li>
-							<li><a href="generic.html">Generic Page</a></li>
-							<li><a href="elements.html">Elements Reference</a></li>
+
+
+			</section>
+
+		</div>
+
+		<!-- Footer -->
+		<footer id="footer">
+			<section>
+				<h2>Introduciton</h2>
+				<p></p>
+			</section>
+			<section>
+				<h2>Contact Information</h2>
+				<dl class="alt">
+					<dt>Address</dt>
+					<dd> Bletchley &bull; Milton Keynes, UK</dd>
+					<dt>Phone</dt>
+					<dd>+44 7463001807</dd>
+					<dt>Email</dt>
+					<dd>
+						<ul>
+							<li>
+								<a href="mailto:Xin.Meng.1@city.ac.uk">Xin.Meng.1@city.ac.uk</a>
+							</li>
+							<li>
+								<a href="mailto:i@mengxin.science">i@mengxin.science</a>
+							</li>
 						</ul>
-						<ul class="icons">
-							<li><a href="#" class="icon fa-twitter"><span class="label">Twitter</span></a></li>
-							<li><a href="#" class="icon fa-facebook"><span class="label">Facebook</span></a></li>
-							<li><a href="#" class="icon fa-instagram"><span class="label">Instagram</span></a></li>
-							<li><a href="#" class="icon fa-github"><span class="label">GitHub</span></a></li>
-						</ul>
-					</nav>
 
-				<!-- Main -->
-					<div id="main">
+					</dd>
+				</dl>
+				<ul class="actions">
+					<li>
+						<a href="https://github.com/xmeng1/tex-pdf-pipeline" class="button" target="_blank">Learn More</a>
+					</li>
+				</ul>
+				<ul class="icons">
+					<li>
+						<a href="https://github.com/xmeng1" class="icon fa-github alt" target="_blank">
+							<span class="label">GitHub</span>
+						</a>
+					</li>
+					<li>
+						<a href="https://stackoverflow.com/users/2000468/xin-meng" class="icon fa-stack-overflow alt" target="_blank">
+							<span class="label">StackOverflow</span>
+						</a>
+					</li>
+					<li>
+						<a href="https://linkedin.com/in/xinmeng1" class="icon fa-linkedin alt" target="_blank">
+							<span class="label">LinkedIn</span>
+						</a>
+					</li>
+					<li>
+						<a href="https://twitter.com/xinmeng_1" class="icon fa-twitter alt" target="_blank">
+							<span class="label">Twitter</span>
+						</a>
+					</li>
+					<li>
+						<a href="https://medium.com/@mengxin" class="icon fa-medium alt" target="_blank">
+							<span class="label">Medium</span>
+						</a>
+					</li>
 
-						<!-- Featured Post -->
-							<article class="post featured">
-								<header class="major">
-									<span class="date">April 25, 2017</span>
-									<h2><a href="#">And this is a<br />
-									massive headline</a></h2>
-									<p>Aenean ornare velit lacus varius enim ullamcorper proin aliquam<br />
-									facilisis ante sed etiam magna interdum congue. Lorem ipsum dolor<br />
-									amet nullam sed etiam veroeros.</p>
-								</header>
-								<a href="#" class="image main"><img src="images/pic01.jpg" alt="" /></a>
-								<ul class="actions special">
-									<li><a href="#" class="button large">Full Story</a></li>
-								</ul>
-							</article>
+				</ul>
+			</section>
+			<p class="copyright">&copy;
+				<a href="https://mengxin.science">Xin Meng</a>.</p>
+		</footer>
 
-						<!-- Posts -->
-							<section class="posts">
-								<article>
-									<header>
-										<span class="date">April 24, 2017</span>
-										<h2><a href="#">Sed magna<br />
-										ipsum faucibus</a></h2>
-									</header>
-									<a href="#" class="image fit"><img src="images/pic02.jpg" alt="" /></a>
-									<p>Donec eget ex magna. Interdum et malesuada fames ac ante ipsum primis in faucibus. Pellentesque venenatis dolor imperdiet dolor mattis sagittis magna etiam.</p>
-									<ul class="actions special">
-										<li><a href="#" class="button">Full Story</a></li>
-									</ul>
-								</article>
-								<article>
-									<header>
-										<span class="date">April 22, 2017</span>
-										<h2><a href="#">Primis eget<br />
-										imperdiet lorem</a></h2>
-									</header>
-									<a href="#" class="image fit"><img src="images/pic03.jpg" alt="" /></a>
-									<p>Donec eget ex magna. Interdum et malesuada fames ac ante ipsum primis in faucibus. Pellentesque venenatis dolor imperdiet dolor mattis sagittis magna etiam.</p>
-									<ul class="actions special">
-										<li><a href="#" class="button">Full Story</a></li>
-									</ul>
-								</article>
-								<article>
-									<header>
-										<span class="date">April 18, 2017</span>
-										<h2><a href="#">Ante mattis<br />
-										interdum dolor</a></h2>
-									</header>
-									<a href="#" class="image fit"><img src="images/pic04.jpg" alt="" /></a>
-									<p>Donec eget ex magna. Interdum et malesuada fames ac ante ipsum primis in faucibus. Pellentesque venenatis dolor imperdiet dolor mattis sagittis magna etiam.</p>
-									<ul class="actions special">
-										<li><a href="#" class="button">Full Story</a></li>
-									</ul>
-								</article>
-								<article>
-									<header>
-										<span class="date">April 14, 2017</span>
-										<h2><a href="#">Tempus sed<br />
-										nulla imperdiet</a></h2>
-									</header>
-									<a href="#" class="image fit"><img src="images/pic05.jpg" alt="" /></a>
-									<p>Donec eget ex magna. Interdum et malesuada fames ac ante ipsum primis in faucibus. Pellentesque venenatis dolor imperdiet dolor mattis sagittis magna etiam.</p>
-									<ul class="actions special">
-										<li><a href="#" class="button">Full Story</a></li>
-									</ul>
-								</article>
-								<article>
-									<header>
-										<span class="date">April 11, 2017</span>
-										<h2><a href="#">Odio magna<br />
-										sed consectetur</a></h2>
-									</header>
-									<a href="#" class="image fit"><img src="images/pic06.jpg" alt="" /></a>
-									<p>Donec eget ex magna. Interdum et malesuada fames ac ante ipsum primis in faucibus. Pellentesque venenatis dolor imperdiet dolor mattis sagittis magna etiam.</p>
-									<ul class="actions special">
-										<li><a href="#" class="button">Full Story</a></li>
-									</ul>
-								</article>
-								<article>
-									<header>
-										<span class="date">April 7, 2017</span>
-										<h2><a href="#">Augue lorem<br />
-										primis vestibulum</a></h2>
-									</header>
-									<a href="#" class="image fit"><img src="images/pic07.jpg" alt="" /></a>
-									<p>Donec eget ex magna. Interdum et malesuada fames ac ante ipsum primis in faucibus. Pellentesque venenatis dolor imperdiet dolor mattis sagittis magna etiam.</p>
-									<ul class="actions special">
-										<li><a href="#" class="button">Full Story</a></li>
-									</ul>
-								</article>
-							</section>
+	</div>
 
-						<!-- Footer -->
-							<footer>
-								<div class="pagination">
-									<!--<a href="#" class="previous">Prev</a>-->
-									<a href="#" class="page active">1</a>
-									<a href="#" class="page">2</a>
-									<a href="#" class="page">3</a>
-									<span class="extra">&hellip;</span>
-									<a href="#" class="page">8</a>
-									<a href="#" class="page">9</a>
-									<a href="#" class="page">10</a>
-									<a href="#" class="next">Next</a>
-								</div>
-							</footer>
+	<!-- Scripts -->
+	<script src="assets/js/jquery.min.js"></script>
+	<script src="assets/js/jquery.scrollex.min.js"></script>
+	<script src="assets/js/jquery.scrolly.min.js"></script>
+	<script src="assets/js/browser.min.js"></script>
+	<script src="assets/js/breakpoints.min.js"></script>
+	<script src="assets/js/util.js"></script>
+	<script src="assets/js/main.js"></script>
 
-					</div>
+</body>
 
-				<!-- Footer -->
-					<footer id="footer">
-						<section>
-							<form method="post" action="#">
-								<div class="fields">
-									<div class="field">
-										<label for="name">Name</label>
-										<input type="text" name="name" id="name" />
-									</div>
-									<div class="field">
-										<label for="email">Email</label>
-										<input type="text" name="email" id="email" />
-									</div>
-									<div class="field">
-										<label for="message">Message</label>
-										<textarea name="message" id="message" rows="3"></textarea>
-									</div>
-								</div>
-								<ul class="actions">
-									<li><input type="submit" value="Send Message" /></li>
-								</ul>
-							</form>
-						</section>
-						<section class="split contact">
-							<section class="alt">
-								<h3>Address</h3>
-								<p>1234 Somewhere Road #87257<br />
-								Nashville, TN 00000-0000</p>
-							</section>
-							<section>
-								<h3>Phone</h3>
-								<p><a href="#">(000) 000-0000</a></p>
-							</section>
-							<section>
-								<h3>Email</h3>
-								<p><a href="#">info@untitled.tld</a></p>
-							</section>
-							<section>
-								<h3>Social</h3>
-								<ul class="icons alt">
-									<li><a href="#" class="icon alt fa-twitter"><span class="label">Twitter</span></a></li>
-									<li><a href="#" class="icon alt fa-facebook"><span class="label">Facebook</span></a></li>
-									<li><a href="#" class="icon alt fa-instagram"><span class="label">Instagram</span></a></li>
-									<li><a href="#" class="icon alt fa-github"><span class="label">GitHub</span></a></li>
-								</ul>
-							</section>
-						</section>
-					</footer>
-
-				<!-- Copyright -->
-					<div id="copyright">
-						<ul><li>&copy; Untitled</li><li>Design: <a href="https://html5up.net">HTML5 UP</a></li></ul>
-					</div>
-
-			</div>
-
-		<!-- Scripts -->
-			<script src="assets/js/jquery.min.js"></script>
-			<script src="assets/js/jquery.scrollex.min.js"></script>
-			<script src="assets/js/jquery.scrolly.min.js"></script>
-			<script src="assets/js/browser.min.js"></script>
-			<script src="assets/js/breakpoints.min.js"></script>
-			<script src="assets/js/util.js"></script>
-			<script src="assets/js/main.js"></script>
-
-	</body>
 </html>
